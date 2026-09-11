@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>속뜻 번역기 - 상대방의 진짜 속마음은?</title>
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2d3436;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 500px;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            color: #636e72;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        select, textarea, input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dfe6e9;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus, textarea:focus, input:focus {
+            border-color: var(--primary-color);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #5b4bc4;
+        }
+
+        /* 결과 화면 디자인 */
+        .result-box {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #f1f2f6;
+            border-radius: 12px;
+            display: none;
+        }
+
+        .result-box.active {
+            display: block;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .result-title {
+            font-size: 0.85rem;
+            color: var(--primary-color);
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .result-main {
+            font-size: 1.15rem;
+            font-weight: bold;
+            color: #2d3436;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .result-detail {
+            font-size: 0.9rem;
+            color: #636e72;
+            border-top: 1px dashed #ccc;
+            padding-top: 12px;
+            line-height: 1.5;
+        }
+
+        .loading {
+            text-align: center;
+            display: none;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🔍 속뜻 번역기</h1>
+        <p>상대방이 한 말 뒤에 숨겨진 진짜 의도를 파악해 드립니다.</p>
+    </header>
+
+    <form id="translateForm">
+        <div class="form-group">
+            <label for="relation">상대방과의 관계</label>
+            <select id="relation" required>
+                <option value="연애/썸">연애 / 썸 타는 사이</option>
+                <option value="직장">직장 동료 / 상사</option>
+                <option value="친구">친구 / 지인</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="context">상황 설명 (어떤 상황이었나요?)</label>
+            <textarea id="context" placeholder="예: 이번 주말에 약속 있냐고 물어봤을 때..." required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="speech">상대방이 한 말</label>
+            <input type="text" id="speech" placeholder="예: 나 요즘 너무 바빠서 정신이 없네 ㅠㅠ" required>
+        </div>
+
+        <button type="submit">속뜻 해석하기</button>
+    </form>
+
+    <div class="loading" id="loading">
+        상대방의 뇌 구조 분석 중... 🧠
+    </div>
+
+    <div class="result-box" id="resultBox">
+        <div class="result-title">해석 결과</div>
+        <div class="result-main" id="resultMain"></div>
+        <div class="result-detail" id="resultDetail"></div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('translateForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const relation = document.getElementById('relation').value;
+        const context = document.getElementById('context').value;
+        const speech = document.getElementById('speech').value;
+
+        const loading = document.getElementById('loading');
+        const resultBox = document.getElementById('resultBox');
+
+        // 로딩 화면 표시
+        loading.style.display = 'block';
+        resultBox.classList.remove('active');
+
+        // 1.2초 후 결과를 출력 (분석 과정 모사)
+        setTimeout(() => {
+            loading.style.display = 'none';
+            
+            // 키워드 기반 해석 로직
+            const analysis = analyzeSpeech(relation, context, speech);
+            
+            document.getElementById('resultMain').innerText = `"${analysis.meaning}"`;
+            document.getElementById('resultDetail').innerHTML = `💡 <strong>추천 대처법:</strong> ${analysis.tip}`;
+
+            resultBox.classList.add('active');
+        }, 1200);
+    });
+
+    // 간단한 키워드 기반 해석 함수
+    function analyzeSpeech(relation, context, speech) {
+        let meaning = "상대방의 말이 다소 애매하거나 돌려서 표현한 것일 수 있습니다.";
+        let tip = "상대방의 감정을 자극하지 않도록 조심스럽게 의도를 재확인해 보세요.";
+
+        if (speech.includes("바빠") || speech.includes("정신")) {
+            meaning = "당신과 시간을 보낼 우선순위가 낮거나, 직접적인 거절을 피하기 위한 핑계일 가능성이 높습니다.";
+            tip = "더 이상 독촉하지 말고 '그래 바쁜 거 끝나고 연락해~' 정도로 여유롭게 넘기는 것이 좋습니다.";
+        } else if (speech.includes("밥") || speech.includes("언제 한번")) {
+            meaning = "구체적인 날짜가 없는 예의상 던진 인사말입니다.";
+            tip = "진짜 만날 생각이 있다면 날짜 후보 2개를 직접 제시해 보시고, 반응이 미지근하다면 그냥 넘어가세요.";
+        } else if (speech.includes("생각해 볼게") || speech.includes("검토")) {
+            if (relation === "직장") {
+                meaning = "우선순위에서 밀렸거나 거절 의사를 간곡히 내비친 것입니다.";
+                tip = "며칠 뒤 피드백을 다시 요청하거나 보완된 대안을 준비해 보세요.";
+            } else {
+                meaning = "당장의 제안이 마음에는 들지 않지만 거절하기 미안한 상태입니다.";
+                tip = "선택의 압박을 주지 않고 스스로 결정하도록 시간을 주세요.";
+            }
+        } else if (speech.includes("피곤") || speech.includes("자야")) {
+            meaning = "대화를 그만 마치고 싶거나 개인적인 휴식이 필요한 상태입니다.";
+            tip = "'푹 쉬어!' 하고 깔끔하게 대화를 마무리해주면 호감도가 유지됩니다.";
+        }
+
+        return { meaning, tip };
+    }
+</script>
+
+</body>
+</html>
